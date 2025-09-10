@@ -4,7 +4,7 @@ from src.kit_api import KitAPIClient
 from src.models import SalesModel
 
 
-async def get_sales_data(client: KitAPIClient, now: datetime, hours: int = 72):
+async def get_sales_data(client: KitAPIClient, now: datetime, hours: int = 168):
     endpoint = 'GetSales'
     up_date = now - timedelta(hours=hours)
 
