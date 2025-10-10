@@ -1,6 +1,13 @@
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timedelta
+
+from src.enums import Company, MKStatuses
+
+MINUTES_TO_CONNECTION_ERROR_STATUS = 15
+
+
+def timestamp() -> datetime:
+    return datetime.now() - timedelta(hours=2)
 
 
 @dataclass
@@ -9,28 +16,23 @@ class Sale:
     timestamp: datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class MK:
     id: int
     name: str
-    sales: list[Sale]
+    statuses: set[int]
+    last_sale_timestamp: datetime
+    last_ping_timestamp: datetime
+    company: Company
 
-    def is_valid_mk(self, stop_words: list[str]) -> bool:
-        for word in stop_words:
-            if word in self.name:
-                return False
-        return True
+    def has_sale_in_selected_time_range(self, hours: int) -> bool:
+        return timestamp() - timedelta(hours=hours) < self.last_sale_timestamp
 
-    def has_sales_in_period(self, period: datetime) -> bool:
-        if self.last_sale_timestamp:
-            return self.last_sale_timestamp < period
+    def has_connection_error(self) -> bool:
+        return timestamp() - timedelta(minutes=MINUTES_TO_CONNECTION_ERROR_STATUS) > self.last_ping_timestamp
 
-        return False
+    def has_status(self, status: MKStatuses) -> bool:
+        return status in self.statuses
 
-    @property
-    def last_sale_timestamp(self) -> Optional[datetime]:
-        if self.sales:
-            return self.sales[0].timestamp
-
-    def print_report(self):
-        print(f'{self.name.ljust(50)} | {self.last_sale_timestamp.strftime("%d.%m.%Y %H:%M")}')
+    def is_snack(self) -> bool:
+        return self.company == Company.SNACK

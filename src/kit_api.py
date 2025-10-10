@@ -1,3 +1,4 @@
+import enum
 import hashlib
 import json
 import os
@@ -9,8 +10,16 @@ from typing import Any, Optional
 
 from dotenv import load_dotenv
 
+from src.entities import MK
+from src.models import VendingMachinesModel, VendingMachinesStatusesModel
+
 load_dotenv()
 BASE_URL = "https://api2.kit-invest.ru/APIService.svc"
+
+
+class Endpoints(enum.StrEnum):
+    VM_STATUSES = 'GetVMStates'
+    VMS = 'GetVendingMachines'
 
 
 def _datetime_to_str(val: datetime) -> str:
@@ -25,55 +34,86 @@ class KitAPIClient:
         self._base_url = BASE_URL
         self.request_counter = int(time.time_ns())
 
-    async def post_request(
-            self, endpoint: str, payload: Optional[dict[str, Any]] = None
-    ) -> dict[str, Any]:
+    async def get_all_mks(self) -> list[MK]:
+        all_vms = await self.get_all_vms()
+        all_states = await self.get_all_vms_states()
 
-        if payload is None:
-            payload = {}
+        vms_hash_map = all_vms.as_hash_map()
 
-        full_payload = {"Auth": self._build_auth()}
-        full_payload.update(payload)
-        request = json.dumps(full_payload)
+        res = []
+
+        for state in all_states.as_list():
+            vm = vms_hash_map[state.id]
+
+            if vm.id != state.id:
+                raise Exception('Id двух переданных объектов должны быть одинаковыми.')
+
+            mk = MK(
+                id=vm.id,
+                name=vm.name,
+                statuses=state.statuses,
+                last_sale_timestamp=state.last_sale_timestamp,
+                last_ping_timestamp=state.last_ping_timestamp,
+                company=vm.company
+            )
+            res.append(mk)
+
+        return res
+
+    async def get_all_vms(self) -> VendingMachinesModel:
+        vms = await self._post_request(endpoint=Endpoints.VMS)
+        return VendingMachinesModel.model_validate(vms)
+
+    async def get_all_vms_states(self) -> VendingMachinesStatusesModel:
+        vms = await self._post_request(endpoint=Endpoints.VM_STATUSES)
+        return VendingMachinesStatusesModel.model_validate(vms)
+
+    async def _post_request(self, endpoint: str, payload: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+        request_body = self._build_request_body()
+
+        if payload:
+            request_body.update(payload)
+
+        request = json.dumps(request_body)
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(
-                    url=f"{self._base_url}/{endpoint}", data=request
-            ) as response:
+            async with session.post(url=f"{self._base_url}/{endpoint}", data=request) as response:
                 response.raise_for_status()
-                return await response.json()
+                data = await response.json()
 
-    @staticmethod
+                if data['ResultCode'] != 0:
+                    raise Exception(f'Получен ResultCode - {data['ResultCode']}')
+
+                return data
+
     def build_filter(
+            self,
             from_date: datetime,
             to_date: datetime,
-            company_id: Optional[int] = None,
+            company_id: Optional[str] = None,
             vending_machine_id: Optional[int] = None,
     ) -> dict[str, Any]:
         up_date = _datetime_to_str(from_date)
         to_date = _datetime_to_str(to_date)
-        filter_obj = {"UpDate": up_date, "ToDate": to_date}
-        if company_id is not None:
-            filter_obj["CompanyId"] = str(company_id)
+        company_id = str(company_id) if company_id else self._company_id
+        filter_obj = {
+            "UpDate": up_date,
+            "ToDate": to_date,
+            "CompanyId": company_id
+        }
         if vending_machine_id is not None:
             filter_obj["VendingMachineId"] = str(vending_machine_id)
         return {'Filter': filter_obj}
 
-    def _generate_request_id(self) -> int:
+    def _build_request_body(self) -> dict[str, Any]:
         self.request_counter += 1
-        return self.request_counter
-
-    def _generate_sign(self, request_id: int) -> str:
-
-        sign_string = f"{self._company_id}{self._password}{request_id}"
-        return hashlib.md5(sign_string.encode("utf-8")).hexdigest()
-
-    def _build_auth(self) -> dict[str, Any]:
-
-        request_id = self._generate_request_id()
+        request_id = self.request_counter
+        sign = hashlib.md5(f"{self._company_id}{self._password}{request_id}".encode("utf-8")).hexdigest()
         return {
-            "CompanyId": self._company_id,
-            "RequestId": request_id,
-            "UserLogin": self._user_login,
-            "Sign": self._generate_sign(request_id),
+            'Auth': {
+                "CompanyId": self._company_id,
+                "RequestId": request_id,
+                "UserLogin": self._user_login,
+                "Sign": sign
+            }
         }
