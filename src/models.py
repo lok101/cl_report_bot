@@ -1,7 +1,12 @@
 from collections import defaultdict
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, BeforeValidator
+
+
+def str_to_datetime(val: str) -> datetime:
+    return datetime.strptime(val, '%d.%m.%Y %H:%M:%S')
 
 
 class SaleModel(BaseModel):
@@ -9,13 +14,7 @@ class SaleModel(BaseModel):
     vm_name: str = Field(validation_alias='VendingMachineName')
     good_name: str = Field(validation_alias='GoodsName')
     price: int = Field(validation_alias='Sum')
-    timestamp: datetime = Field(validation_alias='DateTime')
-
-    # noinspection PyNestedDecorators
-    @field_validator('timestamp', mode='before')
-    @classmethod
-    def to_datetime(cls, val: str) -> datetime:
-        return datetime.strptime(val, '%d.%m.%Y %H:%M:%S')
+    timestamp: Annotated[datetime, Field(validation_alias='DateTime'), BeforeValidator(str_to_datetime)]
 
 
 class SalesModel(BaseModel):
@@ -32,11 +31,6 @@ class VendingMachineModel(BaseModel):
     id: int = Field(validation_alias='VendingMachineId')
     name: str = Field(validation_alias='VendingMachineName')
     company: int = Field(validation_alias='CompanyId')
-    # terminal_id: int | None = Field(validation_alias='ModemSerialNumber')
-
-    # @property
-    # def status(self) -> VMStatus:
-    #     return VMStatus.ACTIVE if self.terminal_id else VMStatus.DISABLE
 
 
 class VendingMachinesModel(BaseModel):
@@ -52,14 +46,16 @@ class VendingMachinesModel(BaseModel):
 class VendingMachineStatus(BaseModel):
     id: int = Field(validation_alias='VendingMachineId')
     statuses: set[int] = Field(validation_alias='Statuses')
-    last_sale_timestamp: datetime = Field(validation_alias='LastSaleDateTime')
-    last_ping_timestamp: datetime = Field(validation_alias='DateTime')
-
-    # noinspection PyNestedDecorators
-    @field_validator('last_sale_timestamp', 'last_ping_timestamp', mode='before')
-    @classmethod
-    def to_datetime(cls, val: str) -> datetime:
-        return datetime.strptime(val, '%d.%m.%Y %H:%M:%S')
+    last_sale_timestamp: Annotated[
+        datetime,
+        Field(validation_alias='LastSaleDateTime'),
+        BeforeValidator(str_to_datetime)
+    ]
+    last_ping_timestamp: Annotated[
+        datetime,
+        Field(validation_alias='DateTime'),
+        BeforeValidator(str_to_datetime)
+    ]
 
     # noinspection PyNestedDecorators
     @field_validator('statuses', mode='before')

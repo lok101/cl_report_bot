@@ -8,11 +8,16 @@ _alert_service = AlertService()
 
 
 async def main():
-    time_interval = int(input('Введите время для анализа: '))
-    mks = await _client.get_all_mks()
-    _alert_service.print_mk_without_sales(mks, time_interval)
-    _alert_service.print_mk_with_network_connection_error(mks)
-    _alert_service.print_snack_with_sales_unknown_product(mks)
+    try:
+        time_interval = int(input('Введите время для анализа: '))
+        mks = await _client.get_all_mks()
+        _alert_service.print_mk_without_sales(mks, time_interval)
+        _alert_service.print_mk_with_network_connection_error(mks)
+        _alert_service.print_snack_with_sales_unknown_product(mks)
+    except Exception as ex:
+        print(ex)
+    finally:
+        input('Нажмите Enter для завершения.')
 
 
 asyncio.run(main())
