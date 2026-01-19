@@ -21,11 +21,12 @@ class TelegramClient:
 
         return cls(token=token, chat_id=chat_id)
 
-    async def send_message(self, text: str):
+    async def send_message(self, text: str, chat_id: Optional[str] = None):
         url: str = f"https://api.telegram.org/bot{self._token}/sendMessage"
         escaped_text: str = self._escape_markdown_v2(text)
+        target_chat_id: str = self._chat_id if chat_id is None else str(chat_id)
         payload: dict[str, str] = {
-            "chat_id": self._chat_id,
+            "chat_id": target_chat_id,
             "text": f"```{escaped_text}```",
             "parse_mode": "MarkdownV2",
         }
@@ -36,6 +37,21 @@ class TelegramClient:
                 data: dict[str, Any] = await response.json()
                 if not data.get("ok"):
                     raise Exception(f"Ошибка Telegram API: {data}")
+
+    async def get_updates(self, offset: Optional[int] = None, timeout: int = 60) -> list[dict[str, Any]]:
+        url: str = f"https://api.telegram.org/bot{self._token}/getUpdates"
+        params: dict[str, Any] = {"timeout": timeout}
+        if offset is not None:
+            params["offset"] = offset
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url=url, params=params) as response:
+                response.raise_for_status()
+                data: dict[str, Any] = await response.json()
+                if not data.get("ok"):
+                    raise Exception(f"Ошибка Telegram API: {data}")
+                result: list[dict[str, Any]] = data.get("result", [])
+                return result
 
     @staticmethod
     def _escape_markdown_v2(text: str) -> str:
