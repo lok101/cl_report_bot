@@ -24,4 +24,6 @@ cron_file="/etc/cron.d/sales_checker"
 chmod 0644 "$cron_file"
 touch /var/log/cron.log
 
+python /app/main.py --listen >> /var/log/cron.log 2>&1 &
+
 cron -f
