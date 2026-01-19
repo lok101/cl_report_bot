@@ -5,8 +5,10 @@ from typing import Annotated
 from pydantic import BaseModel, Field, field_validator, BeforeValidator
 
 
-def str_to_datetime(val: str) -> datetime:
-    return datetime.strptime(val, '%d.%m.%Y %H:%M:%S')
+def str_to_datetime(val: str) -> datetime | None:
+    if val:
+        return datetime.strptime(val, '%d.%m.%Y %H:%M:%S')
+    return None
 
 
 class SaleModel(BaseModel):
@@ -47,7 +49,7 @@ class VendingMachineStatus(BaseModel):
     id: int = Field(validation_alias='VendingMachineId')
     statuses: set[int] = Field(validation_alias='Statuses')
     last_sale_timestamp: Annotated[
-        datetime,
+        datetime | None,
         Field(validation_alias='LastSaleDateTime'),
         BeforeValidator(str_to_datetime)
     ]

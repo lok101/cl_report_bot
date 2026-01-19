@@ -11,6 +11,10 @@ class AlertService:
         if items:
             print(f'Аппараты без продажи последние {interval} часа(ов):')
             for item in items:
+
+                if item.last_sale_timestamp is None:
+                    continue
+
                 text = f'{item.name.ljust(50)} | {item.last_sale_timestamp.strftime("%d.%m.%Y %H:%M")}'
                 print(text)
             print('\n')

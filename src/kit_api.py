@@ -1,6 +1,7 @@
 import enum
 import hashlib
 import json
+import os
 from datetime import datetime
 
 import aiohttp
@@ -27,9 +28,9 @@ def _datetime_to_str(val: datetime) -> str:
 
 class KitAPIClient:
     def __init__(self):
-        self._company_id = 383595
-        self._user_login = 'API_account_383595'
-        self._password = 'hJut+R5Xz1-ndjhT=w'
+        self._company_id = os.getenv("KIT_API_COMPANY_ID")
+        self._user_login = os.getenv("KIT_API_LOGIN")
+        self._password = os.getenv("KIT_API_PASSWORD")
         self._base_url = BASE_URL
 
     async def get_all_mks(self) -> list[MK]:
@@ -42,9 +43,6 @@ class KitAPIClient:
 
         for state in all_states.as_list():
             vm = vms_hash_map[state.id]
-
-            if vm.id != state.id:
-                raise Exception('Id двух переданных объектов должны быть одинаковыми.')
 
             mk = MK(
                 id=vm.id,
@@ -75,7 +73,7 @@ class KitAPIClient:
 
         request = json.dumps(request_body)
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
             async with session.post(url=f"{self._base_url}/{endpoint}", data=request) as response:
                 response.raise_for_status()
                 data = await response.json()

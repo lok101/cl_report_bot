@@ -26,6 +26,8 @@ class MK:
     company: Company
 
     def has_sale_in_selected_time_range(self, hours: int) -> bool:
+        if self.last_sale_timestamp is None:
+            return False
         return timestamp() - timedelta(hours=hours) < self.last_sale_timestamp
 
     def has_connection_error(self) -> bool:
