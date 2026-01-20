@@ -17,13 +17,13 @@ cron_file="/etc/cron.d/sales_checker"
   printf '%s\n' "KIT_API_COMPANY_ID=$KIT_API_COMPANY_ID"
   printf '%s\n' "KIT_API_LOGIN=$KIT_API_LOGIN"
   printf '%s\n' "KIT_API_PASSWORD=$KIT_API_PASSWORD"
-  printf '%s\n' "0 3 * * * root python /app/main.py --interval 24 >> /var/log/cron.log 2>&1"
-  printf '%s\n' "0 10 * * * root python /app/main.py --interval 12 >> /var/log/cron.log 2>&1"
+  printf '%s\n' "0 3 * * * root python /app/main.py >> /var/log/cron.log 2>&1"
+  printf '%s\n' "0 10 * * * root python /app/main.py --no-sales-today >> /var/log/cron.log 2>&1"
 } > "$cron_file"
 
 chmod 0644 "$cron_file"
 touch /var/log/cron.log
 
-python /app/main.py --listen >> /var/log/cron.log 2>&1 &
+python /app/app.py --listen >> /var/log/cron.log 2>&1 &
 
 cron -f
