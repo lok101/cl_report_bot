@@ -46,12 +46,22 @@ def _build_cli_parser() -> argparse.ArgumentParser:
 def _build_bot_parser() -> argparse.ArgumentParser:
     parser: BotArgumentParser = BotArgumentParser(description="Команда отчета бота")
     _add_report_args(parser)
+    _add_bot_positional_interval(parser)
     return parser
 
 
 def _add_report_args(parser: argparse.ArgumentParser):
     parser.add_argument("--interval", type=int, help="Интервал анализа в часах")
     parser.add_argument("--no-sales-today", action="store_true", help="Отчет без продаж за сегодня")
+
+
+def _add_bot_positional_interval(parser: argparse.ArgumentParser):
+    parser.add_argument(
+        "interval_hours",
+        type=int,
+        nargs="?",
+        help="Интервал анализа в часах для /get_sales_report N",
+    )
 
 
 def _create_client() -> KitVendingAPIClient:
@@ -89,7 +99,7 @@ def _extract_command_args(text: str) -> list[str] | None:
 
 
 def _format_bot_usage() -> str:
-    return "/get_sales_report [--interval N] [--no-sales-today]"
+    return "/get_sales_report [N] [--interval N] [--no-sales-today]"
 
 
 def _parse_bot_args(text: str, parser: argparse.ArgumentParser) -> argparse.Namespace:

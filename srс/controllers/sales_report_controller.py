@@ -29,7 +29,9 @@ class SalesReportController:
         self._decline_report_builder = decline_report_builder
 
     async def build_report(self, args: argparse.Namespace) -> str:
-        interval: int | None = args.interval
+        interval: int | None = getattr(args, "interval", None)
+        if interval is None:
+            interval = getattr(args, "interval_hours", None)
         no_sales_today: bool = args.no_sales_today
 
         if interval is not None:
