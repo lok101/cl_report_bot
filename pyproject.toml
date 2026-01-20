@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiohttp>=3.12.15",
-    "dotenv>=0.9.9",
+    "python-dotenv>=1.0.1",
     "pydantic>=2.11.7",
     "kit-api @ git+https://github.com/lok101/kit-vending-api.git",
 ]

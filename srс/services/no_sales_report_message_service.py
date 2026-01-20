@@ -13,7 +13,7 @@ class NoSalesReportMessageService:
         if not report.items:
             return ""
 
-        parts: list[str] = []
+        parts: list[str] = ["Аппараты без продаж:"]
         item: NoSalesItem
         for item in report.items:
             line: str = self._format_item(item)

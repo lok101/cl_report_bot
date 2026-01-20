@@ -78,7 +78,7 @@ class NoSalesReportService:
         vending_machine: VendingMachine
         for vending_machine in vending_machines:
             vm_days: set[date] = sales_by_vm_and_day.get(vending_machine.kit_id, set())
-            if self._has_all_days(vm_days, day_set):
+            if self._has_any_day(vm_days, day_set):
                 continue
 
             last_sale_timestamp: datetime | None = last_sale_by_vm.get(vending_machine.kit_id)
@@ -131,5 +131,5 @@ class NoSalesReportService:
         return last_sales
 
     @staticmethod
-    def _has_all_days(vm_days: set[date], required_days: set[date]) -> bool:
-        return required_days.issubset(vm_days)
+    def _has_any_day(vm_days: set[date], required_days: set[date]) -> bool:
+        return not vm_days.isdisjoint(required_days)
