@@ -125,20 +125,30 @@ async def handle_sales_report(
             exc,
         )
         return
-    report_message: str = await controller.build_report(args)
-    if report_message:
-        formatted_message: str = apply_heading_bold(report_message)
-        payload_text: str = TelegramClient.format_quote_markdown_v2(formatted_message)
-        await message.answer(payload_text, parse_mode="MarkdownV2")
-        logger.info(
-            "Команда бота обработана: user_id=%s, chat_id=%s, payload_len=%s",
-            user_id,
-            chat_id,
-            len(payload_text),
-        )
-    else:
-        logger.info(
-            "Команда бота обработана: user_id=%s, chat_id=%s, пустой отчет",
+    try:
+        report_message: str = await controller.build_report(args)
+        if report_message:
+            formatted_message: str = apply_heading_bold(report_message)
+            payload_text: str = TelegramClient.format_quote_markdown_v2(formatted_message)
+            await message.answer(payload_text, parse_mode="MarkdownV2")
+            logger.info(
+                "Команда бота обработана: user_id=%s, chat_id=%s, payload_len=%s",
+                user_id,
+                chat_id,
+                len(payload_text),
+            )
+        else:
+            logger.info(
+                "Команда бота обработана: user_id=%s, chat_id=%s, пустой отчет",
+                user_id,
+                chat_id,
+            )
+    except Exception as exc:
+        error_text: str = f"Ошибка формирования отчета: {exc}"
+        formatted_error: str = TelegramClient.format_quote_markdown_v2(error_text)
+        await message.answer(formatted_error, parse_mode="MarkdownV2")
+        logger.exception(
+            "Ошибка обработки команды бота: user_id=%s, chat_id=%s",
             user_id,
             chat_id,
         )

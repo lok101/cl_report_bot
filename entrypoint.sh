@@ -6,17 +6,22 @@ set -e
 : "${KIT_API_COMPANY_ID:?Нужен KIT_API_COMPANY_ID}"
 : "${KIT_API_LOGIN:?Нужен KIT_API_LOGIN}"
 : "${KIT_API_PASSWORD:?Нужен KIT_API_PASSWORD}"
+: "${DAYS_FOR_AVERAGE:?Нужен DAYS_FOR_AVERAGE}"
+: "${DECLINE_THRESHOLD:?Нужен DECLINE_THRESHOLD}"
 
 cron_file="/etc/cron.d/sales_checker"
 
 {
   printf '%s\n' "SHELL=/bin/sh"
   printf '%s\n' "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  printf '%s\n' "TZ=${TZ:-UTC}"
   printf '%s\n' "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN"
   printf '%s\n' "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID"
   printf '%s\n' "KIT_API_COMPANY_ID=$KIT_API_COMPANY_ID"
   printf '%s\n' "KIT_API_LOGIN=$KIT_API_LOGIN"
   printf '%s\n' "KIT_API_PASSWORD=$KIT_API_PASSWORD"
+  printf '%s\n' "DAYS_FOR_AVERAGE=$DAYS_FOR_AVERAGE"
+  printf '%s\n' "DECLINE_THRESHOLD=$DECLINE_THRESHOLD"
   printf '%s\n' "0 3 * * * root python /app/main.py >> /var/log/cron.log 2>&1"
   printf '%s\n' "0 10 * * * root python /app/main.py --no-sales-today >> /var/log/cron.log 2>&1"
 } > "$cron_file"
