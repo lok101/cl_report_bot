@@ -8,35 +8,25 @@ from srс.domain.entities.vending_machine import VendingMachine
 from srс.domain.ports.vending_machine_repository import VendingMachineRepository
 from srс.services.no_sales_report_message_service import NoSalesReportMessageService
 from srс.services.no_sales_report_service import NoSalesReportService
-from srс.use_cases.no_sales_reports import CreateNoSalesReportMessage
 
 
 class SalesReportController:
     def __init__(
             self,
             vending_machines_repository: VendingMachineRepository,
-            no_sales_use_case: CreateNoSalesReportMessage,
             no_sales_service: NoSalesReportService,
             no_sales_message_service: NoSalesReportMessageService,
             last_sale_days: int,
             decline_report_builder: Callable[[], Awaitable[str]],
     ):
         self._vending_machines_repository = vending_machines_repository
-        self._no_sales_use_case = no_sales_use_case
         self._no_sales_service = no_sales_service
         self._no_sales_message_service = no_sales_message_service
         self._last_sale_days = last_sale_days
         self._decline_report_builder = decline_report_builder
 
     async def build_report(self, args: argparse.Namespace) -> str:
-        interval: int | None = getattr(args, "interval", None)
-        if interval is None:
-            interval = getattr(args, "interval_hours", None)
         no_sales_today: bool = args.no_sales_today
-
-        if interval is not None:
-            report: str = await self._no_sales_use_case.execute(interval_hours=interval)
-            return report
 
         if no_sales_today:
             report_today: str = await self._build_no_sales_today()

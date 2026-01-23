@@ -13,46 +13,6 @@ class NoSalesReportService:
     def __init__(self, sales_repository: SalesRepository):
         self._sales_repository = sales_repository
 
-    async def create_report(
-            self,
-            vending_machines: Iterable[VendingMachine],
-            interval_hours: int,
-            last_sale_days: int,
-    ) -> NoSalesReport:
-        now_moscow: datetime = self._get_moscow_now_naive()
-        interval_from: datetime = now_moscow - timedelta(hours=interval_hours)
-        last_sale_from: datetime = now_moscow - timedelta(days=last_sale_days)
-
-        interval_sales: list[Sale] = await self._sales_repository.get_sales(
-            from_date=interval_from,
-            to_date=now_moscow,
-            vending_machine_id=None,
-        )
-        last_sales: list[Sale] = await self._sales_repository.get_sales(
-            from_date=last_sale_from,
-            to_date=now_moscow,
-            vending_machine_id=None,
-        )
-
-        interval_sales_by_vm: dict[int, list[Sale]] = self._group_sales_by_vm(interval_sales)
-        last_sale_by_vm: dict[int, datetime] = self._get_last_sale_by_vm(last_sales)
-
-        items: list[NoSalesItem] = []
-        vending_machine: VendingMachine
-        for vending_machine in vending_machines:
-            if interval_sales_by_vm.get(vending_machine.kit_id):
-                continue
-
-            last_sale_timestamp: datetime | None = last_sale_by_vm.get(vending_machine.kit_id)
-            item: NoSalesItem = NoSalesItem(
-                vending_machine=vending_machine,
-                last_sale_timestamp=last_sale_timestamp,
-            )
-            items.append(item)
-
-        report: NoSalesReport = NoSalesReport(items=items)
-        return report
-
     async def create_report_for_days(
             self,
             vending_machines: Iterable[VendingMachine],
@@ -102,14 +62,6 @@ class NoSalesReportService:
             return timestamp
         moscow_timestamp: datetime = timestamp.astimezone(ZoneInfo("Europe/Moscow"))
         return moscow_timestamp.replace(tzinfo=None)
-
-    @staticmethod
-    def _group_sales_by_vm(sales: list[Sale]) -> dict[int, list[Sale]]:
-        grouped: dict[int, list[Sale]] = {}
-        sale: Sale
-        for sale in sales:
-            grouped.setdefault(sale.vending_machine_id, []).append(sale)
-        return grouped
 
     def _group_sales_by_vm_and_day(self, sales: list[Sale]) -> dict[int, set[date]]:
         grouped: dict[int, set[date]] = {}

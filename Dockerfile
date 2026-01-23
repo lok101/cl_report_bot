@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends cron git \
+/get_sales_report (tg://bot_command?command=get_sales_report)    && apt-get install -y --no-install-recommends cron git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
