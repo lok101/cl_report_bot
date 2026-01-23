@@ -10,5 +10,5 @@ load_dotenv()
 async def main():
     await app()
 
-
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

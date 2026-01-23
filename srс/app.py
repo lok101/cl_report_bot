@@ -1,10 +1,12 @@
 import argparse
+import logging
 import os
 
 from dotenv import load_dotenv
 from kit_api import KitVendingAPIClient
 
 from srс.controllers.sales_report_controller import SalesReportController
+from srс.infra.app_logger import get_logger
 from srс.infra.kit_api_sales_repository import KitAPISalesRepository
 from srс.infra.kit_api_vending_machine_repository import KitAPIVendingMachineRepository
 from srс.infra.telegram_client import TelegramClient
@@ -101,22 +103,27 @@ def _build_controller(client: KitVendingAPIClient) -> SalesReportController:
 
 
 async def app():
+    logger: logging.Logger = get_logger()
+    logger.info("Запуск приложения")
     args: argparse.Namespace = _parse_args()
-
-    if getattr(args, "bot", False):
-        await run_bot(_create_client, _build_controller)
-        return
-    client: KitVendingAPIClient = _create_client()
     try:
-        controller: SalesReportController = _build_controller(client)
-        message: str = await controller.build_report(args)
+        if getattr(args, "bot", False):
+            logger.info("Запуск в режиме бота")
+            await run_bot(_create_client, _build_controller)
+            return
+        client: KitVendingAPIClient = _create_client()
+        try:
+            controller: SalesReportController = _build_controller(client)
+            message: str = await controller.build_report(args)
 
-        if message:
-            formatted_message: str = apply_heading_bold(message)
-            if getattr(args, "dev", False):
-                print(formatted_message)
-            else:
-                telegram_client: TelegramClient = TelegramClient.from_env()
-                await telegram_client.send_message(formatted_message, as_quote=True)
+            if message:
+                formatted_message: str = apply_heading_bold(message)
+                if getattr(args, "dev", False):
+                    print(formatted_message)
+                else:
+                    telegram_client: TelegramClient = TelegramClient.from_env()
+                    await telegram_client.send_message(formatted_message, as_quote=True)
+        finally:
+            await client.close()
     finally:
-        await client.close()
+        logger.info("Завершение приложения")

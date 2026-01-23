@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import shlex
 from typing import Any, Awaitable, Callable, Optional
@@ -11,6 +12,7 @@ from dotenv import load_dotenv
 from kit_api import KitVendingAPIClient
 
 from srс.controllers.sales_report_controller import SalesReportController
+from srс.infra.app_logger import get_logger
 from srс.infra.telegram_client import TelegramClient
 
 
@@ -99,29 +101,58 @@ async def handle_sales_report(
     controller: SalesReportController,
     bot_parser: argparse.ArgumentParser,
 ):
+    logger: logging.Logger = get_logger()
     raw_text: str = message.text or ""
     text: str = raw_text.strip()
+    user_id: int | None = message.from_user.id if message.from_user else None
+    chat_id: int | None = message.chat.id if message.chat else None
+    logger.info(
+        "Начало обработки команды бота: user_id=%s, chat_id=%s, text=%s",
+        user_id,
+        chat_id,
+        text,
+    )
     try:
         args: argparse.Namespace = _parse_bot_args(text, bot_parser)
     except ValueError as exc:
         error_text: str = f"Неверные аргументы: {exc}\nИспользование: {_format_bot_usage()}"
         formatted_error: str = TelegramClient.format_quote_markdown_v2(error_text)
         await message.answer(formatted_error, parse_mode="MarkdownV2")
+        logger.warning(
+            "Ошибка аргументов команды бота: user_id=%s, chat_id=%s, error=%s",
+            user_id,
+            chat_id,
+            exc,
+        )
         return
     report_message: str = await controller.build_report(args)
     if report_message:
         formatted_message: str = apply_heading_bold(report_message)
         payload_text: str = TelegramClient.format_quote_markdown_v2(formatted_message)
         await message.answer(payload_text, parse_mode="MarkdownV2")
+        logger.info(
+            "Команда бота обработана: user_id=%s, chat_id=%s, payload_len=%s",
+            user_id,
+            chat_id,
+            len(payload_text),
+        )
+    else:
+        logger.info(
+            "Команда бота обработана: user_id=%s, chat_id=%s, пустой отчет",
+            user_id,
+            chat_id,
+        )
 
 
 async def run_bot(
     create_client: Callable[[], KitVendingAPIClient],
     build_controller: Callable[[KitVendingAPIClient], SalesReportController],
 ):
+    logger: logging.Logger = get_logger()
     client: KitVendingAPIClient = create_client()
     bot_token: str = _get_bot_token()
     try:
+        logger.info("Запуск Telegram-бота")
         controller: SalesReportController = build_controller(client)
         bot_parser: argparse.ArgumentParser = _build_bot_parser()
         async with Bot(token=bot_token) as bot:
@@ -135,5 +166,6 @@ async def run_bot(
             await dispatcher.start_polling(bot)
     finally:
         await client.close()
+        logger.info("Остановка Telegram-бота")
 
 
