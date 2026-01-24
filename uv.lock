@@ -234,7 +234,7 @@ wheels = [
 [[package]]
 name = "kit-api"
 version = "0.2.6"
-source = { git = "https://github.com/lok101/kit-vending-api.git#dc6ab9eff99b30ff0445209b11eab04ee0f97cef" }
+source = { git = "https://github.com/lok101/kit-vending-api.git#f9ab2d5d73cc78ce94ecc308ae43c2cef2af4ac2" }
 dependencies = [
     { name = "aiohttp" },
     { name = "pydantic" },
