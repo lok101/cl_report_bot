@@ -13,3 +13,4 @@ wheels/
 .idea
 .cursor
 /data/
+/__test__.py

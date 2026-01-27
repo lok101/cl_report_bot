@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from typing import DefaultDict, Iterable
+from zoneinfo import ZoneInfo
 
 from srс.domain.entities.sale import Sale
 from srс.domain.entities.sales_analyze_report import SalesAnalyzeReport
@@ -63,10 +64,10 @@ class SalesAnalyzeService:
         return report
 
     def _get_date_range(self) -> tuple[datetime, datetime, date]:
-        today: date = datetime.now().date()
+        today: date = datetime.now(tz=ZoneInfo("Asia/Yekaterinburg")).date()
         from_date: date = today - timedelta(days=self._days_for_average)
         from_datetime: datetime = datetime.combine(from_date, time.min)
-        to_datetime: datetime = datetime.combine(today, time.min)
+        to_datetime: datetime = datetime.combine(today, time.max)
         yesterday: date = today - timedelta(days=1)
         return from_datetime, to_datetime, yesterday
 

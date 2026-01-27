@@ -6,7 +6,6 @@ from srс.app import app
 
 load_dotenv()
 
-
 async def main():
     await app()
 

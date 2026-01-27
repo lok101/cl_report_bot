@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 
 from kit_api import KitVendingAPIClient, SalesCollection
-from kit_api.models.sales import BaseSaleModel
+from kit_api.models.sales import SaleModel
 
 from srс.domain.entities.sale import Sale
 from srс.domain.ports.sales_repository import SalesRepository
@@ -47,7 +47,7 @@ class KitAPISalesRepository(SalesRepository):
             to_date=to_date,
         )
         cache: dict[int, list[Sale]] = {}
-        sale_model: BaseSaleModel
+        sale_model: SaleModel
 
         for sale_model in sales_model.get_all():
             sale: Sale = Sale(

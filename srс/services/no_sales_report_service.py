@@ -22,11 +22,11 @@ class NoSalesReportService:
         if not days:
             return NoSalesReport(items=[])
 
-        now_moscow: datetime = self._get_moscow_now_naive()
-        last_sale_from: datetime = now_moscow - timedelta(days=last_sale_days)
+        now: datetime = datetime.now(tz=ZoneInfo("Asia/Yekaterinburg"))
+        last_sale_from: datetime = now - timedelta(days=last_sale_days)
         sales: list[Sale] = await self._sales_repository.get_sales(
             from_date=last_sale_from,
-            to_date=now_moscow,
+            to_date=now,
             vending_machine_id=None,
         )
 
@@ -52,34 +52,21 @@ class NoSalesReportService:
         return report
 
     @staticmethod
-    def _get_moscow_now_naive() -> datetime:
-        now_moscow: datetime = datetime.now(ZoneInfo("Europe/Moscow"))
-        return now_moscow.replace(tzinfo=None)
-
-    @staticmethod
-    def _normalize_timestamp_to_moscow_naive(timestamp: datetime) -> datetime:
-        if timestamp.tzinfo is None:
-            return timestamp
-        moscow_timestamp: datetime = timestamp.astimezone(ZoneInfo("Europe/Moscow"))
-        return moscow_timestamp.replace(tzinfo=None)
-
-    def _group_sales_by_vm_and_day(self, sales: list[Sale]) -> dict[int, set[date]]:
+    def _group_sales_by_vm_and_day(sales: list[Sale]) -> dict[int, set[date]]:
         grouped: dict[int, set[date]] = {}
         sale: Sale
         for sale in sales:
-            normalized_timestamp: datetime = self._normalize_timestamp_to_moscow_naive(sale.timestamp)
-            sale_day: date = normalized_timestamp.date()
-            grouped.setdefault(sale.vending_machine_id, set()).add(sale_day)
+            grouped.setdefault(sale.vending_machine_id, set()).add(sale.timestamp.date())
         return grouped
 
-    def _get_last_sale_by_vm(self, sales: list[Sale]) -> dict[int, datetime]:
+    @staticmethod
+    def _get_last_sale_by_vm(sales: list[Sale]) -> dict[int, datetime]:
         last_sales: dict[int, datetime] = {}
         sale: Sale
         for sale in sales:
-            normalized_timestamp: datetime = self._normalize_timestamp_to_moscow_naive(sale.timestamp)
             current: datetime | None = last_sales.get(sale.vending_machine_id)
-            if current is None or normalized_timestamp > current:
-                last_sales[sale.vending_machine_id] = normalized_timestamp
+            if current is None or sale.timestamp > current:
+                last_sales[sale.vending_machine_id] = sale.timestamp
         return last_sales
 
     @staticmethod

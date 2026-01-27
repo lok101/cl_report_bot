@@ -1,7 +1,6 @@
 import argparse
 from collections.abc import Awaitable, Callable
-from datetime import date, datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import date, timedelta
 
 from srс.domain.entities.no_sales_report import NoSalesReport
 from srс.domain.entities.vending_machine import VendingMachine
@@ -38,7 +37,9 @@ class SalesReportController:
         return combined
 
     async def _build_no_sales_today(self) -> str:
-        days: list[date] = self._get_moscow_today()
+        today = date.today()
+
+        days: list[date] = [today]
         vending_machines: list[VendingMachine] = await self._vending_machines_repository.get_all()
         report: NoSalesReport = await self._no_sales_service.create_report_for_days(
             vending_machines=vending_machines,
@@ -49,7 +50,10 @@ class SalesReportController:
         return message
 
     async def _build_no_sales_yesterday_today(self) -> str:
-        days: list[date] = self._get_moscow_yesterday_today()
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+
+        days: list[date] = [yesterday, today]
         vending_machines: list[VendingMachine] = await self._vending_machines_repository.get_all()
         report: NoSalesReport = await self._no_sales_service.create_report_for_days(
             vending_machines=vending_machines,
@@ -58,19 +62,6 @@ class SalesReportController:
         )
         message: str = self._no_sales_message_service.create_message(report)
         return message
-
-    @staticmethod
-    def _get_moscow_today() -> list[date]:
-        now_moscow: datetime = datetime.now(ZoneInfo("Europe/Moscow"))
-        today: date = now_moscow.date()
-        return [today]
-
-    @staticmethod
-    def _get_moscow_yesterday_today() -> list[date]:
-        now_moscow: datetime = datetime.now(ZoneInfo("Europe/Moscow"))
-        today: date = now_moscow.date()
-        yesterday: date = today - timedelta(days=1)
-        return [yesterday, today]
 
     @staticmethod
     def _combine_messages(first: str, second: str) -> str:
