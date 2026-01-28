@@ -1,11 +1,14 @@
 import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from kit_api import KitVendingAPIClient, SalesCollection
 from kit_api.models.sales import SaleModel
 
 from srс.domain.entities.sale import Sale
 from srс.domain.ports.sales_repository import SalesRepository
+
+_PROJECT_TZ = ZoneInfo("Asia/Yekaterinburg")
 
 _CACHE_TTL_SECONDS: float = 60.0
 
@@ -50,10 +53,13 @@ class KitAPISalesRepository(SalesRepository):
         sale_model: SaleModel
 
         for sale_model in sales_model.get_all():
+            timestamp: datetime = sale_model.timestamp
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=_PROJECT_TZ)
             sale: Sale = Sale(
                 vending_machine_id=sale_model.vending_machine_id,
                 amount=float(sale_model.price),
-                timestamp=sale_model.timestamp,
+                timestamp=timestamp,
             )
             cache.setdefault(sale.vending_machine_id, []).append(sale)
         self._cache = cache

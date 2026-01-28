@@ -1,12 +1,15 @@
 import argparse
 from collections.abc import Awaitable, Callable
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from srс.domain.entities.no_sales_report import NoSalesReport
 from srс.domain.entities.vending_machine import VendingMachine
 from srс.domain.ports.vending_machine_repository import VendingMachineRepository
 from srс.services.no_sales_report_message_service import NoSalesReportMessageService
 from srс.services.no_sales_report_service import NoSalesReportService
+
+_PROJECT_TZ = ZoneInfo("Asia/Yekaterinburg")
 
 
 class SalesReportController:
@@ -37,7 +40,7 @@ class SalesReportController:
         return combined
 
     async def _build_no_sales_today(self) -> str:
-        today = date.today()
+        today: date = datetime.now(_PROJECT_TZ).date()
 
         days: list[date] = [today]
         vending_machines: list[VendingMachine] = await self._vending_machines_repository.get_all()
@@ -50,8 +53,8 @@ class SalesReportController:
         return message
 
     async def _build_no_sales_yesterday_today(self) -> str:
-        today = date.today()
-        yesterday = today - timedelta(days=1)
+        today: date = datetime.now(_PROJECT_TZ).date()
+        yesterday: date = today - timedelta(days=1)
 
         days: list[date] = [yesterday, today]
         vending_machines: list[VendingMachine] = await self._vending_machines_repository.get_all()
