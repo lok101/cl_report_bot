@@ -1,15 +1,13 @@
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from typing import DefaultDict, Iterable
-from zoneinfo import ZoneInfo
 
+from srс.domain.entities.project_datetime import ProjectDateTime
 from srс.domain.entities.sale import Sale
 from srс.domain.entities.sales_analyze_report import SalesAnalyzeReport
 from srс.domain.entities.vending_machine import VendingMachine
 from srс.domain.ports.sales_repository import SalesRepository
 from srс.domain.value_objects.sales_analyze_item import SalesAnalyzeItem
-
-
 
 
 class SalesAnalyzeService:
@@ -22,14 +20,14 @@ class SalesAnalyzeService:
     async def create_sales_analyze_report(self, vending_machines: Iterable[VendingMachine]) -> SalesAnalyzeReport:
         """Пропускает аппараты, на которых совсем не было продаж (падение на 100%)."""
 
-        from_date: datetime
-        to_date: datetime
+        from_date: ProjectDateTime
+        to_date: ProjectDateTime
         yesterday: date
         from_date, to_date, yesterday = self._get_date_range()
 
         sales: list[Sale] = await self._sales_repository.get_sales(
-            from_date=from_date,
-            to_date=to_date,
+            from_date=from_date.to_local_timezone(),
+            to_date=to_date.to_local_timezone(),
             vending_machine_id=None,
         )
         sales_by_vm: dict[int, list[Sale]] = self._group_sales_by_vm(sales)
@@ -37,7 +35,8 @@ class SalesAnalyzeService:
         items: list[SalesAnalyzeItem] = []
         for vending_machine in vending_machines:
             vm_sales: list[Sale] = sales_by_vm.get(vending_machine.kit_id, [])
-            day_totals: dict[date, float] = self._sum_sales_by_day(vm_sales, from_date, to_date)
+            day_totals: dict[date, float] = self._sum_sales_by_day(vm_sales, from_date.to_local_timezone(),
+                                                                   to_date.to_local_timezone())
             total_sum: float = sum(day_totals.values())
             average: float = total_sum / self._days_for_average
             yesterday_total: float = day_totals.get(yesterday, 0.0)
@@ -63,11 +62,11 @@ class SalesAnalyzeService:
         report: SalesAnalyzeReport = SalesAnalyzeReport(items=items)
         return report
 
-    def _get_date_range(self) -> tuple[datetime, datetime, date]:
-        today: date = datetime.now(tz=ZoneInfo("Asia/Yekaterinburg")).date()
+    def _get_date_range(self) -> tuple[ProjectDateTime, ProjectDateTime, date]:
+        today: date = ProjectDateTime.now().to_local_timezone().date()
         from_date: date = today - timedelta(days=self._days_for_average)
-        from_datetime: datetime = datetime.combine(from_date, time.min)
-        to_datetime: datetime = datetime.combine(today, time.max)
+        from_datetime: ProjectDateTime = ProjectDateTime.from_local(datetime.combine(from_date, time.min))
+        to_datetime: ProjectDateTime = ProjectDateTime.from_local(datetime.combine(today, time.max))
         yesterday: date = today - timedelta(days=1)
         return from_datetime, to_datetime, yesterday
 

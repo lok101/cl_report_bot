@@ -1,8 +1,8 @@
 from datetime import date, datetime, timedelta
 from typing import Iterable
-from zoneinfo import ZoneInfo
 
 from srс.domain.entities.no_sales_report import NoSalesReport
+from srс.domain.entities.project_datetime import ProjectDateTime
 from srс.domain.entities.sale import Sale
 from srс.domain.entities.vending_machine import VendingMachine
 from srс.domain.ports.sales_repository import SalesRepository
@@ -22,11 +22,11 @@ class NoSalesReportService:
         if not days:
             return NoSalesReport(items=[])
 
-        now: datetime = datetime.now(tz=ZoneInfo("Asia/Yekaterinburg"))
-        last_sale_from: datetime = now - timedelta(days=last_sale_days)
+        now: ProjectDateTime = ProjectDateTime.now()
+        last_sale_from: ProjectDateTime = now - timedelta(days=last_sale_days)
         sales: list[Sale] = await self._sales_repository.get_sales(
-            from_date=last_sale_from,
-            to_date=now,
+            from_date=last_sale_from.to_local_timezone(),
+            to_date=now.to_local_timezone(),
             vending_machine_id=None,
         )
 

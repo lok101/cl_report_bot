@@ -10,4 +10,6 @@ dependencies = [
     "pydantic>=2.11.7",
     "kit-api @ git+https://github.com/lok101/kit-vending-api.git",
     "aiogram>=3.24.0",
+    "beartype>=0.22.9",
+    "tzlocal>=5.3.1",
 ]
