@@ -243,9 +243,10 @@ wheels = [
 [[package]]
 name = "kit-api"
 version = "0.2.6"
-source = { git = "https://github.com/lok101/kit-vending-api.git#c9dd56af7fe6887604c40f74ba3fe363704d509b" }
+source = { git = "https://github.com/lok101/kit-vending-api.git?rev=refactor%2Fsimplify-models#744d04c83ec70d270e0c90b19b15da4bdc07d5ec" }
 dependencies = [
     { name = "aiohttp" },
+    { name = "beartype" },
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "tzdata" },
@@ -494,7 +495,7 @@ requires-dist = [
     { name = "aiogram", specifier = ">=3.24.0" },
     { name = "aiohttp", specifier = ">=3.12.15" },
     { name = "beartype", specifier = ">=0.22.9" },
-    { name = "kit-api", git = "https://github.com/lok101/kit-vending-api.git" },
+    { name = "kit-api", git = "https://github.com/lok101/kit-vending-api.git?rev=refactor%2Fsimplify-models" },
     { name = "pydantic", specifier = ">=2.11.7" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "tzlocal", specifier = ">=5.3.1" },

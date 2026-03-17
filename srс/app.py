@@ -4,6 +4,7 @@ import os
 
 from dotenv import load_dotenv
 from kit_api import KitVendingAPIClient
+from kit_api.client import KitAPIAccount
 
 from srс.controllers.sales_report_controller import SalesReportController
 from srс.infra.app_logger import get_logger
@@ -53,8 +54,13 @@ def _create_client() -> KitVendingAPIClient:
     password: str = _get_required_env("KIT_API_PASSWORD")
     company_id_str: str = _get_required_env("KIT_API_COMPANY_ID")
     company_id: int = int(company_id_str)
-    client: KitVendingAPIClient = KitVendingAPIClient()
-    client.login(login, password, company_id)
+    account = KitAPIAccount(
+        login=login,
+        password=password,
+        company_id=company_id
+    )
+
+    client: KitVendingAPIClient = KitVendingAPIClient(account=account)
     return client
 
 
@@ -66,8 +72,6 @@ def _get_sales_analyze_settings() -> tuple[int, float]:
     return days_for_average, decline_threshold
 
 
-
-
 def _build_controller(client: KitVendingAPIClient) -> SalesReportController:
     vending_machine_repo: KitAPIVendingMachineRepository = KitAPIVendingMachineRepository(client)
     sales_repo: KitAPISalesRepository = KitAPISalesRepository(client)
@@ -75,6 +79,7 @@ def _build_controller(client: KitVendingAPIClient) -> SalesReportController:
     no_sales_message_service: NoSalesReportMessageService = NoSalesReportMessageService(
         last_sale_days=LAST_SALE_DAYS,
     )
+
     async def _build_decline_report() -> str:
         days_for_average: int
         decline_threshold: float

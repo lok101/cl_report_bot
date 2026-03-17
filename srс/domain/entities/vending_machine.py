@@ -5,3 +5,4 @@ from dataclasses import dataclass
 class VendingMachine:
     kit_id: int
     name: str
+    is_active: bool
