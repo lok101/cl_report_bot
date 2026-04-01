@@ -1,0 +1,20 @@
+services:
+  cl_report_bot:
+    build:
+      context: .
+    container_name: cl_report_bot
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?Нужен TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:?Нужен TELEGRAM_CHAT_ID}
+      KIT_API_COMPANY_ID: ${KIT_API_COMPANY_ID:?Нужен KIT_API_COMPANY_ID}
+      KIT_API_LOGIN: ${KIT_API_LOGIN:?Нужен KIT_API_LOGIN}
+      KIT_API_PASSWORD: ${KIT_API_PASSWORD:?Нужен KIT_API_PASSWORD}
+      DAYS_FOR_AVERAGE: ${DAYS_FOR_AVERAGE:?Нужен DAYS_FOR_AVERAGE}
+      DECLINE_THRESHOLD: ${DECLINE_THRESHOLD:?Нужен DECLINE_THRESHOLD}
+      TZ: ${TZ:-Asia/Yekaterinburg}
+    volumes:
+      - cl_report_bot_logs:/var/log/cl_report_bot
+
+volumes:
+  cl_report_bot_logs:
