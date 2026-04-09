@@ -2,8 +2,7 @@ import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from kit_api import KitVendingAPIClient, SalesCollection
-from kit_api.models.sales import SaleModel
+from kit_api import KitVendingAPIClient, SaleModel
 
 from srс.domain.entities.sale import Sale
 from srс.domain.ports.sales_repository import SalesRepository
@@ -45,14 +44,13 @@ class KitAPISalesRepository(SalesRepository):
         return (time.monotonic() - self._cache_timestamp) < _CACHE_TTL_SECONDS
 
     async def _refresh_cache(self, from_date: datetime, to_date: datetime) -> None:
-        sales_model: SalesCollection = await self._client.get_sales(
+        sales_models: list[SaleModel] = await self._client.get_sales(
             from_date=from_date,
             to_date=to_date,
         )
         cache: dict[int, list[Sale]] = {}
-        sale_model: SaleModel
 
-        for sale_model in sales_model.get_all():
+        for sale_model in sales_models:
             timestamp: datetime = sale_model.timestamp
             if timestamp.tzinfo is None:
                 timestamp = timestamp.replace(tzinfo=_PROJECT_TZ)

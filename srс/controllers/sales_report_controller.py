@@ -40,7 +40,7 @@ class SalesReportController:
         return combined
 
     async def _build_no_sales_today(self) -> str:
-        today: date = datetime(2026, 3, 26).date()
+        today: date = datetime.now(_PROJECT_TZ).date()
 
         days: list[date] = [today]
         vending_machines: list[VendingMachine] = await self._vending_machines_repository.get_all()
